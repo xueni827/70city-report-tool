@@ -1,0 +1,22 @@
+{
+  "name": "70city-report-tool",
+  "version": "2.0.0",
+  "description": "70城价格指数通报工具 - 一键部署版",
+  "main": "server-v2.js",
+  "scripts": {
+    "start": "node server-v2.js",
+    "dev": "nodemon server-v2.js"
+  },
+  "keywords": ["房价", "指数", "通报", "国家统计局"],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}
