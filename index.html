@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>70城价格指数通报工具</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>70城价格指数通报工具</h1>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label for="urlInput">本月国家统计局网址：</label>
+                <input type="text" id="urlInput" placeholder="请输入本月国家统计局公布的70城房价指数网址">
+            </div>
+            <div class="input-group">
+                <label for="lastMonthUrlInput">上月国家统计局网址：</label>
+                <input type="text" id="lastMonthUrlInput" placeholder="请输入上月国家统计局公布的70城房价指数网址（用于对比排名变化）">
+            </div>
+            <div class="input-group">
+                <button id="fetchBtn" onclick="fetchData()">抓取数据</button>
+            </div>
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+                <span>正在抓取数据...</span>
+            </div>
+        </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <div id="result" class="result hidden">
+            <div class="city-selection">
+                <h3>选择要生成通报的城市：</h3>
+                <div class="city-checkboxes" id="cityCheckboxes"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button onclick="generateReport()">生成通报</button>
+                <button onclick="copyText()">复制文字</button>
+                <button onclick="downloadImage()">下载图片</button>
+            </div>
+
+            <div class="report-content">
+                <div class="text-report">
+                    <h3>文字通报</h3>
+                    <pre id="textReport"></pre>
+                </div>
+
+                <div class="table-report">
+                    <h3>数据表格</h3>
+                    <div id="tableContainer">
+                        <table id="dataTable">
+                            <thead id="tableHeader"></thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
