@@ -239,6 +239,7 @@ h1 {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
+    font-family: '楷体', 'KaiTi', serif;
 }
 
 #dataTable th,
@@ -289,6 +290,30 @@ h1 {
     background: #f0f0f0;
     font-weight: bold;
     color: #333;
+}
+
+/* 新房价格指数列 - 浅蓝色背景 */
+#dataTable tbody td:nth-child(2),
+#dataTable tbody td:nth-child(3),
+#dataTable tbody td:nth-child(4),
+#dataTable tbody td:nth-child(5) {
+    background-color: rgb(220, 230, 241);
+}
+
+/* 二手房价格指数列 - 浅绿色背景 */
+#dataTable tbody td:nth-child(6),
+#dataTable tbody td:nth-child(7),
+#dataTable tbody td:nth-child(8),
+#dataTable tbody td:nth-child(9) {
+    background-color: rgb(235, 241, 222);
+}
+
+/* 排名列 - 白色背景 */
+#dataTable tbody td:nth-child(3),
+#dataTable tbody td:nth-child(5),
+#dataTable tbody td:nth-child(7),
+#dataTable tbody td:nth-child(9) {
+    background-color: white;
 }
 
 @media (max-width: 1200px) {
