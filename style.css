@@ -1,0 +1,321 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    padding: 30px;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 32px;
+}
+
+.input-section {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+.input-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.input-group label {
+    font-weight: bold;
+    color: #555;
+    white-space: nowrap;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.input-group button {
+    padding: 12px 25px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.input-group button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.input-group button:active {
+    transform: translateY(0);
+}
+
+#loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    color: #667eea;
+    font-weight: bold;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error {
+    background: #fee;
+    color: #c33;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #c33;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.result {
+    margin-top: 25px;
+}
+
+.city-selection {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.city-selection h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.city-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.city-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.2s;
+}
+
+.city-checkboxes label:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.city-checkboxes label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.city-checkboxes label.checked {
+    border-color: #667eea;
+    background: #e8eaff;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    justify-content: center;
+}
+
+.action-buttons button {
+    padding: 12px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.action-buttons button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.action-buttons button:active {
+    transform: translateY(0);
+}
+
+.report-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 25px;
+}
+
+.text-report, .table-report {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.text-report h3, .table-report h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.text-report pre {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.8;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+#tableContainer {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    overflow-x: auto;
+}
+
+#dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+#dataTable th,
+#dataTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+#dataTable th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#dataTable thead tr:first-child th {
+    font-size: 14px;
+    padding: 10px;
+}
+
+#dataTable thead tr:nth-child(2) th {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    font-size: 13px;
+}
+
+#dataTable thead tr:first-child th[rowspan] {
+    vertical-align: middle;
+}
+
+#dataTable tbody tr:hover {
+    background: #f5f5f5;
+}
+
+#dataTable tbody tr.selected-city {
+    background: #fff0f0;
+}
+
+#dataTable tbody tr.selected-city td {
+    color: #ff0000;
+    font-weight: bold;
+}
+
+#dataTable td.header-cell {
+    background: #f0f0f0;
+    font-weight: bold;
+    color: #333;
+}
+
+@media (max-width: 1200px) {
+    .report-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .city-checkboxes {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+}
