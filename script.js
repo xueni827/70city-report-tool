@@ -186,8 +186,8 @@ function generateTextReport() {
     // 生成报告
     let report = `国家统计局70城${currentYear.substring(2)}年${currentMonth}月房价指数公布：
 
-新房市场：环比指数${newHouseMonthUp}城上涨、${newHouseMonthFlat}城持平、${newHouseMonthDown}城下降；同比指数${newHouseYearUpCities}等${newHouseYearUp}城上涨，${newHouseYearFlat}城持平，${newHouseYearDown}城下降；
-二手房市场：环比指数${oldHouseMonthUp}城上涨、${oldHouseMonthFlat}城持平、${oldHouseMonthDown}城下降；同比指数${oldHouseYearUp}城上涨、${oldHouseYearFlat}城持平、${oldHouseYearDown}城下降。`;
+新房市场：环比${newHouseMonthUp}城上涨${newHouseMonthDown}城下降，同比${newHouseYearUp}城上涨${newHouseYearDown}城下降；
+二手房市场：环比${oldHouseMonthUp}城上涨${oldHouseMonthDown}城下降，同比${oldHouseYearUp}城上涨${oldHouseYearDown}城下降。`;
 
     // 为每个选中的城市生成详细数据
     selectedCities.forEach(cityName => {
@@ -233,15 +233,25 @@ function generateTextReport() {
             }
         }
 
+        // 判断新房同环比趋势是否一致
+        const newHouseMonthTrend = city.newHouseMonthIndex > 100 ? '上涨' : (city.newHouseMonthIndex < 100 ? '下降' : '持平');
+        const newHouseYearTrend = city.newHouseYearIndex > 100 ? '上涨' : (city.newHouseYearIndex < 100 ? '下降' : '持平');
+        
+        let newHouseTrendStr = '';
+        if (newHouseMonthTrend === newHouseYearTrend) {
+            newHouseTrendStr = `新房价格同环比${newHouseMonthTrend}`;
+        } else {
+            newHouseTrendStr = `新房价格环比${newHouseMonthTrend}、同比${newHouseYearTrend}`;
+        }
+
         report += `
 
-【${cityName}】`;
-        report += `新房价格指数环比排名${newHouseMonthRankChange}、同比排名${newHouseYearRankChange}；`;
-        report += `二手房价格指数环比排名${oldHouseMonthRankChange}、同比排名${oldHouseYearRankChange}；`;
-        report += `新房环比指数${city.newHouseMonthIndex.toFixed(1)}、排名${city.newHouseMonthRank}；`;
-        report += `同比指数${city.newHouseYearIndex.toFixed(1)}、排名${city.newHouseYearRank}；`;
-        report += `二手房环比指数${city.oldHouseMonthIndex.toFixed(1)}、排名${city.oldHouseMonthRank}；`;
-        report += `同比指数${city.oldHouseYearIndex.toFixed(1)}、排名${city.oldHouseYearRank}；`;
+【${cityName}】${newHouseTrendStr}；`;
+        report += `环比排名${newHouseMonthRankChange}、同比排名${newHouseYearRankChange}；`;
+        report += `新房环比指数${city.newHouseMonthIndex.toFixed(1)}（排名${city.newHouseMonthRank}）、`;
+        report += `同比指数${city.newHouseYearIndex.toFixed(1)}（排名${city.newHouseYearRank}）；`;
+        report += `二手房环比指数${city.oldHouseMonthIndex.toFixed(1)}（排名${city.oldHouseMonthRank}）、`;
+        report += `同比指数${city.oldHouseYearIndex.toFixed(1)}（排名${city.oldHouseYearRank}）；`;
     });
 
     textReport.textContent = report;
