@@ -59,26 +59,33 @@ async function fetchData() {
         return;
     }
 
-    // 解析月份 - 支持多种格式
+    // 从URL自动解析月份 - 支持多种格式
     let monthMatch = url.match(/(\d{4})年(\d{1,2})月/);
     if (!monthMatch) {
-        monthMatch = url.match(/(\d{4})(\d{2})/);
+        // 匹配tYYYYMM格式，避免误匹配其他8位数字
+        monthMatch = url.match(/t(\d{6})/);
+        if (monthMatch) {
+            const year = monthMatch[1].substring(0, 4);
+            const month = monthMatch[1].substring(4, 6);
+            monthMatch = [monthMatch[0], year, month];
+        }
     }
     if (!monthMatch) {
-        monthMatch = url.match(/t(\d{4})/);
+        // 最后尝试匹配YYYYMM格式
+        monthMatch = url.match(/(\d{4})(0[1-9]|1[0-2])/);
     }
 
     if (monthMatch) {
         currentYear = monthMatch[1];
         let month = parseInt(monthMatch[2] || '01');
-        
+
         // 往前推一个月（公布时间是下个月，实际数据是上个月）
         month = month - 1;
         if (month === 0) {
             month = 12;
             currentYear = (parseInt(currentYear) - 1).toString();
         }
-        
+
         currentMonth = month.toString().padStart(2, '0');
     }
 
@@ -88,16 +95,24 @@ async function fetchData() {
 
     try {
         // 从服务器抓取本月数据
+        console.log('开始抓取数据，URL:', url);
         const response = await fetch(`/api/fetch-data?url=${encodeURIComponent(url)}`);
 
         if (!response.ok) {
+            console.error('服务器返回错误:', response.status, response.statusText);
             throw new Error('数据抓取请求失败');
         }
 
         const data = await response.json();
+        console.log('服务器返回数据:', data);
 
         if (!data || !data.success || !data.cities || data.cities.length === 0) {
-            throw new Error('未获取到有效数据');
+            console.error('数据无效:', data);
+            let errorMsg = '未获取到有效数据';
+            if (data && data.error) {
+                errorMsg += `: ${data.error}`;
+            }
+            throw new Error(errorMsg);
         }
 
         allCityData = data.cities;
@@ -171,7 +186,7 @@ function generateTextReport() {
     const newHouseYearUp = allCityData.filter(c => c.newHouseYearIndex > 100).length;
     const newHouseYearFlat = allCityData.filter(c => c.newHouseYearIndex === 100).length;
     const newHouseYearDown = allCityData.filter(c => c.newHouseYearIndex < 100).length;
-    const newHouseYearUpCities = allCityData.filter(c => c.newHouseYearIndex > 100).slice(0, 5).map(c => c.name).join('、');
+    const newHouseYearUpCities = allCityData.filter(c => c.newHouseYearIndex > 100).slice(0, 3).map(c => c.name).join('、');
     
     // 计算二手房环比统计
     const oldHouseMonthUp = allCityData.filter(c => c.oldHouseMonthIndex > 100).length;
@@ -183,11 +198,89 @@ function generateTextReport() {
     const oldHouseYearFlat = allCityData.filter(c => c.oldHouseYearIndex === 100).length;
     const oldHouseYearDown = allCityData.filter(c => c.oldHouseYearIndex < 100).length;
 
-    // 生成报告
-    let report = `国家统计局70城${currentYear.substring(2)}年${currentMonth}月房价指数公布：
+    // 生成全国总结
+    let nationalSummary = `国家统计局70城${currentYear.substring(2)}年${currentMonth}月房价指数公布：\n\n`;
 
-新房市场：环比${newHouseMonthUp}城上涨${newHouseMonthDown}城下降，同比${newHouseYearUp}城上涨${newHouseYearDown}城下降；
-二手房市场：环比${oldHouseMonthUp}城上涨${oldHouseMonthDown}城下降，同比${oldHouseYearUp}城上涨${oldHouseYearDown}城下降。`;
+    // 新房环比：转换为"X成"格式（70城 = 7成）
+    const newHouseMonthUpCheng = Math.round(newHouseMonthUp / 7);
+
+    // 新房环比：灵活多变的分析
+    let newHouseMonthDesc = '';
+    if (newHouseMonthUp === 0 && newHouseMonthDown >= 65) {
+        newHouseMonthDesc = '环比全国普跌';
+    } else if (newHouseMonthUp === 0) {
+        newHouseMonthDesc = '环比均降';
+    } else if (newHouseMonthUp === 1) {
+        newHouseMonthDesc = '环比仅1城微涨';
+    } else if (newHouseMonthUp === 2) {
+        newHouseMonthDesc = '环比2城上涨';
+    } else if (newHouseMonthUp === 3) {
+        newHouseMonthDesc = '环比仅3城上涨';
+    } else if (newHouseMonthUp === 4 || newHouseMonthUp === 5) {
+        newHouseMonthDesc = `环比仅${newHouseMonthUp}城上涨`;
+    } else if (newHouseMonthUp <= 10) {
+        newHouseMonthDesc = `环比上涨城市减少，仅${newHouseMonthUp}城上涨`;
+    } else if (newHouseMonthUp <= 20) {
+        newHouseMonthDesc = `环比${newHouseMonthUp}城上涨、${newHouseMonthDown}城下降`;
+    } else {
+        newHouseMonthDesc = `环比${newHouseMonthUp}城上涨、${newHouseMonthDown}城下降`;
+    }
+
+    // 新房同比：灵活多变的分析
+    let newHouseYearDesc = '';
+    if (newHouseYearUp === 0 && newHouseYearDown >= 65) {
+        newHouseYearDesc = '同比仍全国普跌';
+    } else if (newHouseYearUp === 0) {
+        newHouseYearDesc = '同比全国普跌';
+    } else if (newHouseYearUp === 1) {
+        newHouseYearDesc = '同比仅1城上涨';
+    } else if (newHouseYearUp <= 5) {
+        newHouseYearDesc = `同比仅${newHouseYearUp}城上涨`;
+    } else {
+        newHouseYearDesc = `同比${newHouseYearUp}城上涨、${newHouseYearDown}城下降`;
+    }
+
+    nationalSummary += `全国新房价格${newHouseMonthDesc}，${newHouseYearDesc}；`;
+
+    // 二手房环比：灵活多变的分析
+    let oldHouseMonthDesc = '';
+    if (oldHouseMonthUp === 0 && oldHouseMonthDown >= 65) {
+        oldHouseMonthDesc = '环比全国普跌';
+    } else if (oldHouseMonthUp === 0) {
+        oldHouseMonthDesc = '环比均降';
+    } else if (oldHouseMonthUp === 1) {
+        oldHouseMonthDesc = '环比仅1城微涨';
+    } else if (oldHouseMonthUp === 2) {
+        oldHouseMonthDesc = '环比2城上涨';
+    } else if (oldHouseMonthUp === 3) {
+        oldHouseMonthDesc = '环比仅3城上涨';
+    } else if (oldHouseMonthUp === 4 || oldHouseMonthUp === 5) {
+        oldHouseMonthDesc = `环比仅${oldHouseMonthUp}城上涨`;
+    } else if (oldHouseMonthUp <= 10) {
+        oldHouseMonthDesc = `环比上涨城市减少，仅${oldHouseMonthUp}城上涨`;
+    } else if (oldHouseMonthUp <= 20) {
+        oldHouseMonthDesc = `环比${oldHouseMonthUp}城上涨、${oldHouseMonthDown}城下降`;
+    } else {
+        oldHouseMonthDesc = `环比${oldHouseMonthUp}城上涨、${oldHouseMonthDown}城下降`;
+    }
+
+    // 二手房同比：类似环比的灵活分析
+    let oldHouseYearDesc = '';
+    if (oldHouseYearUp === 0 && oldHouseYearDown >= 65) {
+        oldHouseYearDesc = '同比仍全国普跌';
+    } else if (oldHouseYearUp === 0) {
+        oldHouseYearDesc = '同比全国普跌';
+    } else if (oldHouseYearUp === 1) {
+        oldHouseYearDesc = '同比仅1城上涨';
+    } else if (oldHouseYearUp <= 5) {
+        oldHouseYearDesc = `同比仅${oldHouseYearUp}城上涨`;
+    } else {
+        oldHouseYearDesc = `同比${oldHouseYearUp}城上涨、${oldHouseYearDown}城下降`;
+    }
+
+    nationalSummary += `全国二手房${oldHouseMonthDesc}，${oldHouseYearDesc}。`;
+
+    let report = nationalSummary;
 
     // 为每个选中的城市生成详细数据
     selectedCities.forEach(cityName => {
@@ -233,21 +326,14 @@ function generateTextReport() {
             }
         }
 
-        // 判断新房同环比趋势是否一致
-        const newHouseMonthTrend = city.newHouseMonthIndex > 100 ? '上涨' : (city.newHouseMonthIndex < 100 ? '下降' : '持平');
-        const newHouseYearTrend = city.newHouseYearIndex > 100 ? '上涨' : (city.newHouseYearIndex < 100 ? '下降' : '持平');
-        
-        let newHouseTrendStr = '';
-        if (newHouseMonthTrend === newHouseYearTrend) {
-            newHouseTrendStr = `新房价格同环比${newHouseMonthTrend}`;
-        } else {
-            newHouseTrendStr = `新房价格环比${newHouseMonthTrend}、同比${newHouseYearTrend}`;
-        }
+        // 城市名称中间空2个汉字距离（4个空格）
+        const spacedCityName = cityName.split('').join('    ');
 
         report += `
 
-【${cityName}】${newHouseTrendStr}；`;
-        report += `环比排名${newHouseMonthRankChange}、同比排名${newHouseYearRankChange}；`;
+【${cityName}】
+${cityName}新房价格环比排名${newHouseMonthRankChange}、同比排名${newHouseYearRankChange}；`;
+        report += `二手房价格环比排名${oldHouseMonthRankChange}、同比排名${oldHouseYearRankChange}；`;
         report += `新房环比指数${city.newHouseMonthIndex.toFixed(1)}（排名${city.newHouseMonthRank}）、`;
         report += `同比指数${city.newHouseYearIndex.toFixed(1)}（排名${city.newHouseYearRank}）；`;
         report += `二手房环比指数${city.oldHouseMonthIndex.toFixed(1)}（排名${city.oldHouseMonthRank}）、`;
@@ -261,9 +347,9 @@ function generateTextReport() {
 function generateTable() {
     const tableHeader = document.getElementById('tableHeader');
     const tableBody = document.getElementById('tableBody');
-    
+    const tableTitle = document.getElementById('tableTitle');
+
     // 更新表格标题
-    const tableTitle = document.querySelector('.table-report h3');
     if (tableTitle) {
         tableTitle.textContent = `国家统计局${currentYear}年${currentMonth}月主要城市商品住宅销售价格分类指数`;
     }
@@ -297,10 +383,13 @@ function generateTable() {
         const isSelected = selectedCities.includes(cityName);
         const rowClass = isSelected ? 'selected-city' : '';
 
+        // 城市名称中间空2格
+        const spacedCityName = cityName.split('').join('  ');
+
         const row = document.createElement('tr');
         row.className = rowClass;
         row.innerHTML = `
-            <td class="header-cell">${cityName}</td>
+            <td class="header-cell">${spacedCityName}</td>
             <td>${city.newHouseMonthIndex.toFixed(1)}</td>
             <td>${city.newHouseMonthRank}</td>
             <td>${city.newHouseYearIndex.toFixed(1)}</td>
