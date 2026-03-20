@@ -233,21 +233,36 @@ h1 {
     border-radius: 8px;
     border: 1px solid #e0e0e0;
     overflow-x: auto;
+    font-family: '华文楷体', 'STKaiti', 'KaiTi', serif;
+}
+
+#tableContainer h3 {
+    font-family: '华文楷体', 'STKaiti', 'KaiTi', serif;
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: bold;
 }
 
 #dataTable {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
-    font-family: '楷体', 'KaiTi', serif;
+    font-size: 16px;
+    font-family: '华文楷体', 'STKaiti', 'KaiTi', serif;
 }
 
 #dataTable th,
 #dataTable td {
-    border: 1px solid #ddd;
+    border: 1px solid #000;
     padding: 8px;
     text-align: center;
     white-space: nowrap;
+    font-weight: normal;
+}
+
+#dataTable th {
+    font-weight: bold;
 }
 
 #dataTable th {
@@ -260,17 +275,40 @@ h1 {
 }
 
 #dataTable thead tr:first-child th {
-    font-size: 14px;
+    font-size: 16px;
     padding: 10px;
 }
 
 #dataTable thead tr:nth-child(2) th {
     background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-    font-size: 13px;
+    font-size: 16px;
 }
 
 #dataTable thead tr:first-child th[rowspan] {
     vertical-align: middle;
+}
+
+/* 表头第一行：全部白色背景 */
+#dataTable thead tr:first-child th {
+    background: white;
+    color: #333;
+}
+
+/* 表头第二行：新房列浅蓝色，二手房列浅绿色 */
+#dataTable thead tr:nth-child(2) th:nth-child(1),
+#dataTable thead tr:nth-child(2) th:nth-child(2),
+#dataTable thead tr:nth-child(2) th:nth-child(3),
+#dataTable thead tr:nth-child(2) th:nth-child(4) {
+    background: rgb(220, 230, 241);
+    color: #333;
+}
+
+#dataTable thead tr:nth-child(2) th:nth-child(5),
+#dataTable thead tr:nth-child(2) th:nth-child(6),
+#dataTable thead tr:nth-child(2) th:nth-child(7),
+#dataTable thead tr:nth-child(2) th:nth-child(8) {
+    background: rgb(235, 241, 222);
+    color: #333;
 }
 
 #dataTable tbody tr:hover {
@@ -282,8 +320,13 @@ h1 {
 }
 
 #dataTable tbody tr.selected-city td {
-    color: #ff0000;
+    color: rgb(192, 0, 0);
     font-weight: bold;
+}
+
+/* 城市名称：中间空2格 */
+#dataTable tbody td:first-child {
+    letter-spacing: 4px;
 }
 
 #dataTable td.header-cell {
