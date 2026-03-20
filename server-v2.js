@@ -23,8 +23,9 @@ app.get('/api/fetch-data', async (req, res) => {
     }
 
     try {
-        console.log('开始抓取:', url);
-        
+        console.log('========== 开始抓取 ==========');
+        console.log('URL:', url);
+
         // 获取网页内容
         const response = await axios.get(url, {
             headers: {
@@ -40,13 +41,32 @@ app.get('/api/fetch-data', async (req, res) => {
             maxRedirects: 5
         });
 
+        console.log('HTTP状态码:', response.status);
+        console.log('数据长度:', response.data.length);
         console.log('抓取成功，开始解析...');
         const $ = cheerio.load(response.data);
+
+        // 检查是否找到表格
+        const tables = $('table');
+        console.log('找到表格数量:', tables.length);
+
+        if (tables.length === 0) {
+            console.log('警告：未找到任何表格');
+            console.log('页面内容预览:', response.data.substring(0, 500));
+        }
 
         // 解析数据
         const cities = parseData($);
 
         console.log(`解析完成，共${cities.length}个城市`);
+
+        if (cities.length === 0) {
+            console.log('警告：解析出的城市数据为空');
+        } else {
+            console.log('前3个城市数据:', cities.slice(0, 3));
+        }
+
+        console.log('========== 抓取完成 ==========');
 
         res.json({
             success: true,
@@ -54,8 +74,16 @@ app.get('/api/fetch-data', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('抓取数据失败:', error.message);
+        console.error('========== 抓取失败 ==========');
+        console.error('错误类型:', error.name);
+        console.error('错误信息:', error.message);
+        if (error.response) {
+            console.error('响应状态:', error.response.status);
+            console.error('响应头:', error.response.headers);
+        }
+        console.error('========== 错误结束 ==========');
         res.status(500).json({
+            success: false,
             error: '数据抓取失败',
             message: error.message
         });
@@ -109,54 +137,70 @@ function parseData($) {
         }
         
         console.log(`表格${tableIndex}: ${isNewHouse ? '新房' : isOldHouse ? '二手房' : '未知'}`);
-        
+        console.log(`表格${tableIndex}总行数:`, rows.length);
+
         // 解析数据行
         rows.slice(2).each((rowIndex, row) => {
             const cells = $(row).find('td');
-            if (cells.length < 8) return;
-            
-            // 左栏城市（前4列）
-            let leftCityName = $(cells[0]).text().trim().replace(/\s+/g, '');
-            const leftMonthIndex = parseFloat($(cells[1]).text().trim()) || 100;
-            const leftYearIndex = parseFloat($(cells[2]).text().trim()) || 100;
-            
-            // 右栏城市（后4列）
-            let rightCityName = $(cells[4]).text().trim().replace(/\s+/g, '');
-            const rightMonthIndex = parseFloat($(cells[5]).text().trim()) || 100;
-            const rightYearIndex = parseFloat($(cells[6]).text().trim()) || 100;
-            
-            // 匹配城市名
-            const leftMatch = all70Cities.find(c => leftCityName.includes(c) || c.includes(leftCityName));
-            const rightMatch = all70Cities.find(c => rightCityName.includes(c) || c.includes(rightCityName));
-            
-            // 存储数据
-            if (leftMatch) {
-                const data = {
-                    name: leftMatch,
-                    monthIndex: leftMonthIndex,
-                    yearIndex: leftYearIndex,
-                    monthRank: 0,
-                    yearRank: 0
-                };
-                if (isNewHouse) {
-                    newHouseData[leftMatch] = data;
-                } else if (isOldHouse) {
-                    oldHouseData[leftMatch] = data;
+
+            // 输出前3行的所有单元格内容用于调试
+            if (rowIndex < 3) {
+                console.log(`行${rowIndex}: 单元格数=${cells.length}`);
+                for (let i = 0; i < cells.length; i++) {
+                    console.log(`  单元格${i}:`, $(cells[i]).text().trim());
                 }
             }
-            
-            if (rightMatch) {
+
+            if (cells.length < 3) return;
+
+            // 处理双栏结构：一行两个城市，每个城市占3列（城市名、环比、同比）
+            // 第一个城市在列0,1,2；第二个城市在列4,5,6
+
+            // 第一个城市
+            let cityName = $(cells[0]).text().trim().replace(/\s+/g, '');
+            const monthIndex = parseFloat($(cells[1]).text().trim()) || 100;
+            const yearIndex = parseFloat($(cells[2]).text().trim()) || 100;
+
+            // 匹配城市名
+            const cityMatch = all70Cities.find(c => cityName.includes(c) || c.includes(cityName));
+
+            // 存储第一个城市数据
+            if (cityMatch) {
                 const data = {
-                    name: rightMatch,
-                    monthIndex: rightMonthIndex,
-                    yearIndex: rightYearIndex,
+                    name: cityMatch,
+                    monthIndex: monthIndex,
+                    yearIndex: yearIndex,
                     monthRank: 0,
                     yearRank: 0
                 };
                 if (isNewHouse) {
-                    newHouseData[rightMatch] = data;
+                    newHouseData[cityMatch] = data;
                 } else if (isOldHouse) {
-                    oldHouseData[rightMatch] = data;
+                    oldHouseData[cityMatch] = data;
+                }
+            }
+
+            // 第二个城市（从第4列开始）
+            if (cells.length >= 6) {
+                let city2Name = $(cells[4]).text().trim().replace(/\s+/g, '');
+                const month2Index = parseFloat($(cells[5]).text().trim()) || 100;
+                const year2Index = parseFloat($(cells[6]).text().trim()) || 100;
+
+                const city2Match = all70Cities.find(c => city2Name.includes(c) || c.includes(city2Name));
+
+                if (city2Match) {
+                    const data = {
+                        name: city2Match,
+                        monthIndex: month2Index,
+                        yearIndex: year2Index,
+                        monthRank: 0,
+                        yearRank: 0
+                    };
+                    if (isNewHouse) {
+                        newHouseData[city2Match] = data;
+                    } else if (isOldHouse) {
+                        oldHouseData[city2Match] = data;
+                    }
                 }
             }
         });
@@ -185,10 +229,16 @@ function parseData($) {
     // 计算排名
     calculateRankings(cities);
 
+    // 调试：输出排名范围
+    const newMonthRanks = cities.map(c => c.newHouseMonthRank).sort((a, b) => a - b);
+    const newYearRanks = cities.map(c => c.newHouseYearRank).sort((a, b) => a - b);
+    console.log('新房环比排名范围:', Math.min(...newMonthRanks), '-', Math.max(...newMonthRanks));
+    console.log('新房同比排名范围:', Math.min(...newYearRanks), '-', Math.max(...newYearRanks));
+
     return cities;
 }
 
-// 计算排名（使用标准竞赛排名法：相同指数排名相同，下一个排名跳过）
+// 计算排名（使用竞争排名/标准排名：相同值并列，后面跳过占用名次）
 function calculateRankings(cities) {
     // 新房环比排名
     const sortedByNewMonth = [...cities].sort((a, b) => {
@@ -197,18 +247,37 @@ function calculateRankings(cities) {
         }
         return a.name.localeCompare(b.name, 'zh');
     });
-    
-    let currentRank = 0;
-    let sameCount = 0;
+
+    let currentRank = 1;
     let lastValue = null;
-    
+    let sameValueCount = 1;
+
     sortedByNewMonth.forEach((city, index) => {
-        if (lastValue !== city.newHouseMonthIndex) {
-            currentRank = index + 1;
+        if (index === 0) {
+            city.newHouseMonthRank = 1;
+            lastValue = city.newHouseMonthIndex;
+            sameValueCount = 1;
+        } else {
+            if (lastValue !== city.newHouseMonthIndex) {
+                // 新的指数值，排名跳过相同值占用的名次
+                currentRank += sameValueCount;
+                sameValueCount = 1;
+            } else {
+                // 相同指数的城市，计数+1
+                sameValueCount++;
+            }
+            city.newHouseMonthRank = currentRank;
             lastValue = city.newHouseMonthIndex;
         }
-        city.newHouseMonthRank = currentRank;
     });
+
+    // 调试：输出新房环比排名分布
+    const rankCount = {};
+    sortedByNewMonth.forEach(city => {
+        const rank = city.newHouseMonthRank;
+        rankCount[rank] = (rankCount[rank] || 0) + 1;
+    });
+    console.log('新房环比排名分布（前10个）:', Object.entries(rankCount).slice(0, 10));
 
     // 新房同比排名
     const sortedByNewYear = [...cities].sort((a, b) => {
@@ -217,16 +286,28 @@ function calculateRankings(cities) {
         }
         return a.name.localeCompare(b.name, 'zh');
     });
-    
-    currentRank = 0;
+
+    currentRank = 1;
     lastValue = null;
-    
+    sameValueCount = 1;
+
     sortedByNewYear.forEach((city, index) => {
-        if (lastValue !== city.newHouseYearIndex) {
-            currentRank = index + 1;
+        if (index === 0) {
+            city.newHouseYearRank = 1;
+            lastValue = city.newHouseYearIndex;
+            sameValueCount = 1;
+        } else {
+            if (lastValue !== city.newHouseYearIndex) {
+                // 新的指数值，排名跳过相同值占用的名次
+                currentRank += sameValueCount;
+                sameValueCount = 1;
+            } else {
+                // 相同指数的城市，计数+1
+                sameValueCount++;
+            }
+            city.newHouseYearRank = currentRank;
             lastValue = city.newHouseYearIndex;
         }
-        city.newHouseYearRank = currentRank;
     });
 
     // 二手房环比排名
@@ -236,16 +317,28 @@ function calculateRankings(cities) {
         }
         return a.name.localeCompare(b.name, 'zh');
     });
-    
-    currentRank = 0;
+
+    currentRank = 1;
     lastValue = null;
-    
+    sameValueCount = 1;
+
     sortedByOldMonth.forEach((city, index) => {
-        if (lastValue !== city.oldHouseMonthIndex) {
-            currentRank = index + 1;
+        if (index === 0) {
+            city.oldHouseMonthRank = 1;
+            lastValue = city.oldHouseMonthIndex;
+            sameValueCount = 1;
+        } else {
+            if (lastValue !== city.oldHouseMonthIndex) {
+                // 新的指数值，排名跳过相同值占用的名次
+                currentRank += sameValueCount;
+                sameValueCount = 1;
+            } else {
+                // 相同指数的城市，计数+1
+                sameValueCount++;
+            }
+            city.oldHouseMonthRank = currentRank;
             lastValue = city.oldHouseMonthIndex;
         }
-        city.oldHouseMonthRank = currentRank;
     });
 
     // 二手房同比排名
@@ -255,16 +348,28 @@ function calculateRankings(cities) {
         }
         return a.name.localeCompare(b.name, 'zh');
     });
-    
-    currentRank = 0;
+
+    currentRank = 1;
     lastValue = null;
-    
+    sameValueCount = 1;
+
     sortedByOldYear.forEach((city, index) => {
-        if (lastValue !== city.oldHouseYearIndex) {
-            currentRank = index + 1;
+        if (index === 0) {
+            city.oldHouseYearRank = 1;
+            lastValue = city.oldHouseYearIndex;
+            sameValueCount = 1;
+        } else {
+            if (lastValue !== city.oldHouseYearIndex) {
+                // 新的指数值，排名跳过相同值占用的名次
+                currentRank += sameValueCount;
+                sameValueCount = 1;
+            } else {
+                // 相同指数的城市，计数+1
+                sameValueCount++;
+            }
+            city.oldHouseYearRank = currentRank;
             lastValue = city.oldHouseYearIndex;
         }
-        city.oldHouseYearRank = currentRank;
     });
 }
 
